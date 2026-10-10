@@ -1,4 +1,4 @@
-# 影片解析器：Java 三層架構
+# VIDEO_EXTRACTOR — Java 三層架構
 
 Java 21 / Spring Boot 專案。移植基準是目前公開網站的最後一版 `parser.js`、`media.js`、`worker.js`，原始檔保留在 `reference/`。網頁介面直接沿用現有 HTML。
 
@@ -66,3 +66,4 @@ mvn test
 本專案為 Java 原始碼及可獨立執行的服務。現有 `chatgpt.site` 網站仍是原 JavaScript 版，沒有替换線上解析器。此 JAR 需 Java / Docker 主機；不是可直接上傳至現有 Cloudflare Worker 的封裝。
 
 公開網址檢查與 DNS 查詢不能取代主機的網路層出站限制。公開部署沿用現有來源代理能力時，應在部署平台設定對應的出站與存取限制。
+
