@@ -1,0 +1,318 @@
+[
+  {
+    "name": "relative",
+    "html": "<title>測試 - 網站</title><video src=\"/a.mp4\"></video>",
+    "base": "https://example.com/watch",
+    "expected": {
+      "title": "測試",
+      "episodes": [
+        {
+          "name": "影片 1",
+          "urls": [
+            "https://example.com/a.mp4"
+          ]
+        }
+      ],
+      "pageURL": null
+    }
+  },
+  {
+    "name": "multiple",
+    "html": "<video src=\"a.mp4\"></video><video src=\"b.mp4\"></video>",
+    "base": "https://example.com/watch",
+    "expected": {
+      "title": "影片",
+      "episodes": [
+        {
+          "name": "影片 1",
+          "urls": [
+            "https://example.com/a.mp4"
+          ]
+        },
+        {
+          "name": "影片 2",
+          "urls": [
+            "https://example.com/b.mp4"
+          ]
+        }
+      ],
+      "pageURL": null
+    }
+  },
+  {
+    "name": "sources",
+    "html": "<video><source src=\"a.mp4\"><source src=\"b.mp4\"></video>",
+    "base": "https://example.com/watch",
+    "expected": {
+      "title": "影片",
+      "episodes": [
+        {
+          "name": "影片 1",
+          "urls": [
+            "https://example.com/a.mp4"
+          ]
+        },
+        {
+          "name": "影片 2",
+          "urls": [
+            "https://example.com/b.mp4"
+          ]
+        }
+      ],
+      "pageURL": null
+    }
+  },
+  {
+    "name": "empty",
+    "html": "<video src=\"\"></video>",
+    "base": "https://example.com/watch",
+    "error": "未找到影片來源；這個網站需要新增播放器解析器，或需要登入／執行 JavaScript。"
+  },
+  {
+    "name": "empty suppresses fallback",
+    "html": "<video src=\"\"></video>\"https://example.com/a.mp4\"",
+    "base": "https://example.com/watch",
+    "error": "未找到影片來源；這個網站需要新增播放器解析器，或需要登入／執行 JavaScript。"
+  },
+  {
+    "name": "private",
+    "html": "<video src=\"http://127.0.0.1/a.mp4\"></video>",
+    "base": "https://example.com/watch",
+    "error": "未找到影片來源；這個網站需要新增播放器解析器，或需要登入／執行 JavaScript。"
+  },
+  {
+    "name": "no media",
+    "html": "<p>Nothing</p>",
+    "base": "https://example.com/watch",
+    "error": "未找到影片來源；這個網站需要新增播放器解析器，或需要登入／執行 JavaScript。"
+  },
+  {
+    "name": "fallback",
+    "html": "\"https://example.com/a.mp4?token=abc\"",
+    "base": "https://example.com/watch",
+    "expected": {
+      "title": "影片",
+      "episodes": [
+        {
+          "name": "影片 1",
+          "urls": [
+            "https://example.com/a.mp4?token=abc"
+          ]
+        }
+      ],
+      "pageURL": null
+    }
+  },
+  {
+    "name": "escaped",
+    "html": "\"https:\\/\\/example.com/a.m3u8?token=1\"",
+    "base": "https://example.com/watch",
+    "expected": {
+      "title": "影片",
+      "episodes": [
+        {
+          "name": "影片 1",
+          "urls": [
+            "https://example.com/a.m3u8?token=1"
+          ]
+        }
+      ],
+      "pageURL": null
+    }
+  },
+  {
+    "name": "og",
+    "html": "<meta property=\"og:video\" content=\"/a.mp4\">",
+    "base": "https://example.com/watch",
+    "expected": {
+      "title": "影片",
+      "episodes": [
+        {
+          "name": "影片 1",
+          "urls": [
+            "https://example.com/a.mp4"
+          ]
+        }
+      ],
+      "pageURL": null
+    }
+  },
+  {
+    "name": "og declared",
+    "html": "<meta property=\"og:video\" content=\"/stream\"><meta property=\"og:video:type\" content=\"video/mp4\">",
+    "base": "https://example.com/watch",
+    "expected": {
+      "title": "影片",
+      "episodes": [
+        {
+          "name": "影片 1",
+          "urls": [
+            "https://example.com/stream"
+          ]
+        }
+      ],
+      "pageURL": null
+    }
+  },
+  {
+    "name": "og html",
+    "html": "<meta property=\"og:video\" content=\"/stream\"><meta property=\"og:video:type\" content=\"text/html\">",
+    "base": "https://example.com/watch",
+    "error": "未找到影片來源；這個網站需要新增播放器解析器，或需要登入／執行 JavaScript。"
+  },
+  {
+    "name": "dedupe",
+    "html": "<video src=\"/a.mp4\"></video><video src=\"/a.mp4\"></video>",
+    "base": "https://example.com/watch",
+    "expected": {
+      "title": "影片",
+      "episodes": [
+        {
+          "name": "影片 1",
+          "urls": [
+            "https://example.com/a.mp4"
+          ]
+        }
+      ],
+      "pageURL": null
+    }
+  },
+  {
+    "name": "episode",
+    "html": "<script>videourls: [[{\"name\":\"1\",\"url\":\"https://example.com/a.mp4\"},{\"name\":\"2\",\"url\":\"https://example.com/b.mp4\"}],[{\"name\":\"1\",\"url\":\"https://other.example/a.mp4\"}]], more:1</script>",
+    "base": "https://example.com/watch",
+    "expected": {
+      "title": "影片",
+      "episodes": [
+        {
+          "name": "第 1 集",
+          "urls": [
+            "https://example.com/a.mp4",
+            "https://other.example/a.mp4"
+          ]
+        },
+        {
+          "name": "第 2 集",
+          "urls": [
+            "https://example.com/b.mp4"
+          ]
+        }
+      ],
+      "pageURL": null
+    }
+  },
+  {
+    "name": "order A",
+    "html": "[\"https%3A\",\"%2F%2F\",\"example.com\",\"%2Fa.mp4\"] [0,1,2,3]",
+    "base": "https://example.com/watch",
+    "expected": {
+      "title": "影片",
+      "episodes": [
+        {
+          "name": "主影片",
+          "urls": [
+            "https://example.com/a.mp4"
+          ]
+        }
+      ],
+      "pageURL": null
+    }
+  },
+  {
+    "name": "order B",
+    "html": "[\"example.com\",\"https%3A\",\"%2Fa.mp4\",\"%2F%2F\"] [2,0,3,1]",
+    "base": "https://example.com/watch",
+    "expected": {
+      "title": "影片",
+      "episodes": [
+        {
+          "name": "主影片",
+          "urls": [
+            "https://example.com/a.mp4"
+          ]
+        }
+      ],
+      "pageURL": null
+    }
+  },
+  {
+    "name": "mismatched arrays",
+    "html": "[\"https%3A\",\"%2F%2F\",\"example.com\",\"%2Fa.mp4\"] [0,1,2,3,0]",
+    "base": "https://example.com/watch",
+    "error": "未找到影片來源；這個網站需要新增播放器解析器，或需要登入／執行 JavaScript。"
+  },
+  {
+    "name": "query intentionally stripped",
+    "html": "[\"https%3A\",\"%2F%2F\",\"example.com\",\"%2Fa.mp4%3Ftoken%3D1\"] [0,1,2,3]",
+    "base": "https://example.com/watch",
+    "expected": {
+      "title": "影片",
+      "episodes": [
+        {
+          "name": "主影片",
+          "urls": [
+            "https://example.com/a.mp4"
+          ]
+        }
+      ],
+      "pageURL": null
+    }
+  },
+  {
+    "name": "m3u8",
+    "html": "[\"https%3A\",\"%2F%2F\",\"example.com\",\"%2Fa.m3u8\"] [0,1,2,3]",
+    "base": "https://example.com/watch",
+    "expected": {
+      "title": "影片",
+      "episodes": [
+        {
+          "name": "主影片",
+          "urls": [
+            "https://example.com/a.m3u8"
+          ]
+        }
+      ],
+      "pageURL": null
+    }
+  },
+  {
+    "name": "malformed percent",
+    "html": "[\"https%3A\",\"%2F%2F\",\"example.com\",\"%2Fa.mp4%GG\"] [0,1,2,3]",
+    "base": "https://example.com/watch",
+    "error": "未找到影片來源；這個網站需要新增播放器解析器，或需要登入／執行 JavaScript。"
+  },
+  {
+    "name": "plus preserved",
+    "html": "[\"https%3A\",\"%2F%2F\",\"example.com\",\"%2Fa+b.mp4\"] [0,1,2,3]",
+    "base": "https://example.com/watch",
+    "expected": {
+      "title": "影片",
+      "episodes": [
+        {
+          "name": "主影片",
+          "urls": [
+            "https://example.com/a+b.mp4"
+          ]
+        }
+      ],
+      "pageURL": null
+    }
+  },
+  {
+    "name": "title entities",
+    "html": "<title>A &amp; B - Site</title><video src=\"/a.mp4\"></video>",
+    "base": "https://example.com/watch",
+    "expected": {
+      "title": "A & B",
+      "episodes": [
+        {
+          "name": "影片 1",
+          "urls": [
+            "https://example.com/a.mp4"
+          ]
+        }
+      ],
+      "pageURL": null
+    }
+  }
+]
