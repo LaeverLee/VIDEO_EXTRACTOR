@@ -67,8 +67,17 @@ public class HttpRemoteRepository implements RemoteRepository {
     checkPublic(url);
     for (int i = 0; i < 6; i++) {
       Request.Builder request = new Request.Builder().url(url).header("User-Agent", UA);
-      if (referer != null && !referer.isEmpty())
-        request.header("Referer", policy.validate(referer));
+      if (referer != null && !referer.isEmpty()) {
+        String validReferer = policy.validate(referer);
+        request.header("Referer", validReferer);
+        HttpUrl refUrl = HttpUrl.get(validReferer);
+        String host = refUrl.host();
+        if (host.contains(":")) host = "[" + host + "]";
+        String origin = refUrl.scheme() + "://" + host;
+        if (refUrl.port() != HttpUrl.defaultPort(refUrl.scheme()))
+          origin += ":" + refUrl.port();
+        request.header("Origin", origin);
+      }
       if (range != null && !range.isEmpty()) request.header("Range", range);
       Response response = client.newCall(request.build()).execute();
       int status = response.code();

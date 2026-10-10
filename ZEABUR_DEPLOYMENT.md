@@ -20,3 +20,4 @@
 - 2026-10-11：Google Search Console HTML 擁有權驗證成功。google843dbf1d87f87e48.html 已部署在根目錄，HTTPS 200 且內容相符。請保留檔案；依 Google 提示等待 24 小時後重試 OAuth 品牌驗證。
 - 2026-10-11：依使用者提供版本新增 Dean Edwards Packer/Base62 解析並部署。Deployment ID：6aca7c61fb15905b77d54d7c；狀態運作中。本機測試通過，雲端 Docker 建置成功；公開 MP4 inspect 回傳單一來源，Drive configured=true，Google 驗證檔 HTTPS 200。尚未 commit。
 - 2026-10-11：HLS segments.size() > 10000，錯誤訊息同步改為 10000。HlsTest 通過，Deployment ID 6aca808dc0a5252069b832fb 運作中。首頁、MP4 解析與 OAuth 設定檢查通過；未驗證實際大型 HLS 下載。
+- 2026-10-11：HttpRemoteRepository 有 Referer 時送出推導 Origin；Deployment ID 6aca83d5da7cf920c26376cf 運作中。首頁、解析 API 與 OAuth 設定正常；尚未驗證原失敗來源 403 是否解決。
