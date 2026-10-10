@@ -6,3 +6,7 @@ services:
     restart: unless-stopped
     environment:
       PORT: 8080
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+      GOOGLE_REDIRECT_URI: ${GOOGLE_REDIRECT_URI:-http://localhost:8080/api/drive/callback}
+      GOOGLE_DRIVE_MAX_UPLOAD_BYTES: ${GOOGLE_DRIVE_MAX_UPLOAD_BYTES:-4294967296}

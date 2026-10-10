@@ -114,8 +114,8 @@ public class MediaService {
             .filter(l -> !l.startsWith("#"))
             .map(l -> urls.validate(urls.resolve(l, actual)))
             .toList();
-    if (segments.isEmpty() || segments.size() > 1500)
-      throw new VideoException("影片分段為空或超過 1500 段限制。");
+    if (segments.isEmpty() || segments.size() > 10000)
+      throw new VideoException("影片分段為空或超過 10000 段限制。");
     return segments;
   }
 

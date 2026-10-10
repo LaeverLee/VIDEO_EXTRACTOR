@@ -67,3 +67,5 @@ mvn test
 
 公開網址檢查與 DNS 查詢不能取代主機的網路層出站限制。公開部署沿用現有來源代理能力時，應在部署平台設定對應的出站與存取限制。
 
+
+Google Drive：支援每位使用者 OAuth 連線、資料夾管理與指定位置上傳，設定請參閱 [GOOGLE_DRIVE_SETUP.md](GOOGLE_DRIVE_SETUP.md)。

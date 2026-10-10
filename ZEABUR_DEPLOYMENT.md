@@ -1,0 +1,22 @@
+# Zeabur 部署紀錄
+
+- 網址：https://video-extractor-laever.zeabur.app/
+- Zeabur 專案：video-extractor
+- Project ID：6aca6bbe4873e494859cfc5f
+- Environment ID：6aca6bbe5a13ed952df086eb
+- Service ID：6aca6be74873e494859cfc6b
+- 主機：既有 Alibaba Cloud / Ubuntu 24.04
+- 部署來源：outputs/video-parser-cloud，Dockerfile 建置 Java 21
+- 目前已測：HTTPS 首頁、直接 MP4 解析、下載 video/mp4 及自訂檔名、拒絕 metadata 位址。
+- Google Drive：使用者已同意將 OAuth 憑證存入 Zeabur 服務環境變數，已重啟啟用；/api/drive/status configured=true。
+- 正式 OAuth callback：https://video-extractor-laever.zeabur.app/api/drive/callback
+- Google Cloud 已新增並儲存相同 callback；已確認 Drive scope 已儲存。OAuth 測試名單與公開驗證仍由 Google 控制。已驗證 connect 使用 HTTPS callback、PKCE S256 與 Secure session cookie；尚未完成實際 Google 授權與 Drive 上傳驗證。
+- 暫存影片與登入／工作狀態目前不跨容器重啟保存。
+- 新服務已設定 Kubernetes Egress NetworkPolicy：允許平台 DNS 與公網 HTTP/HTTPS，拒絕私有網路及 metadata。
+- 請使用 Zeabur「重新上傳」更新獨立服務，勿更動其他既有服務。
+
+
+- 2026-10-11：privacy.html、terms.html 與首頁頁尾連結已部署，HTTPS 200；Google 品牌政策連結已儲存，發布按鈕已可用，等待正式發布最後確認。更新 Deployment ID：6aca7022da7cf920c26375d2。
+- 2026-10-11：Google Search Console HTML 擁有權驗證成功。google843dbf1d87f87e48.html 已部署在根目錄，HTTPS 200 且內容相符。請保留檔案；依 Google 提示等待 24 小時後重試 OAuth 品牌驗證。
+- 2026-10-11：依使用者提供版本新增 Dean Edwards Packer/Base62 解析並部署。Deployment ID：6aca7c61fb15905b77d54d7c；狀態運作中。本機測試通過，雲端 Docker 建置成功；公開 MP4 inspect 回傳單一來源，Drive configured=true，Google 驗證檔 HTTPS 200。尚未 commit。
+- 2026-10-11：HLS segments.size() > 10000，錯誤訊息同步改為 10000。HlsTest 通過，Deployment ID 6aca808dc0a5252069b832fb 運作中。首頁、MP4 解析與 OAuth 設定檢查通過；未驗證實際大型 HLS 下載。

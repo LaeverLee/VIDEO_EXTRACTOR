@@ -60,11 +60,25 @@ public class ParserService implements VideoParser {
     return new ParseResult(title, List.of(new Episode("主影片", found)), null);
   }
 
+  // 新增：處理大於 36 進位 (Base62) 的加密轉換
+  private String encodeBase62(int value) {
+    String chars = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    if (value == 0) return "0";
+    StringBuilder sb = new StringBuilder();
+    while (value > 0) {
+      sb.insert(0, chars.charAt(value % 62));
+      value /= 62;
+    }
+    return sb.toString();
+  }
+
   public ParseResult extract(String html, String base) {
     Document doc = Jsoup.parse(html);
     Element titleNode = doc.selectFirst("title");
     String title = titleNode == null ? "影片" : titleNode.wholeText().split(" - ", -1)[0].strip();
     if (title.isEmpty()) title = "影片";
+
+    // 1. videourls 適配器
     Matcher episodeMatch = Pattern.compile("videourls:\\s*(?=\\[)").matcher(html);
     if (episodeMatch.find())
       try {
@@ -102,6 +116,8 @@ public class ParserService implements VideoParser {
         if (!episodes.isEmpty()) return new ParseResult(title, episodes, null);
       } catch (Exception ignored) {
       }
+
+    // 2. 字串陣列 + 索引陣列混淆適配器
     try {
       List<List<String>> stringsList = new ArrayList<>();
       List<List<Integer>> indicesList = new ArrayList<>();
@@ -149,8 +165,47 @@ public class ParserService implements VideoParser {
         }
     } catch (Exception ignored) {
     }
+
+    // 3. 新增：Dean Edwards Packer (eval混淆) 適配器
+    try {
+      Matcher packers = pattern("eval\\s*\\(\\s*function\\s*\\(\\s*p\\s*,\\s*a\\s*,\\s*c\\s*,\\s*k\\s*,\\s*e\\s*,\\s*d\\s*\\).*?\\}\\s*\\((.*?)\\)\\s*\\)").matcher(html);
+      while (packers.find()) {
+        String args = packers.group(1);
+        Matcher argsMatch = pattern("(['\"])(.*?)\\1\\s*,\\s*(\\d+)\\s*,\\s*(\\d+)\\s*,\\s*(['\"])(.*?)\\5\\.split\\(['\"]\\|['\"]\\)").matcher(args);
+
+        if (argsMatch.find()) {
+          String p = argsMatch.group(2).replace("\\'", "'").replace("\\\"", "\"");
+          int a = Integer.parseInt(argsMatch.group(3)); // 進位制
+          int c = Integer.parseInt(argsMatch.group(4)); // 字典大小
+          String[] k = argsMatch.group(6).split("\\|");
+
+          // 反向還原字典
+          while (c-- > 0) {
+            if (c < k.length && !k[c].isEmpty()) {
+              String search = "\\b" + (a <= 36 ? Integer.toString(c, a) : encodeBase62(c)) + "\\b";
+              p = p.replaceAll(search, Matcher.quoteReplacement(k[c]));
+            }
+          }
+
+          // 從還原出的 JavaScript 明文中尋找影片網址
+          List<String> unpackedCandidates = new ArrayList<>();
+          Matcher unpackedUrls = Pattern.compile("https?://[^\\s\"'<>\\\\]+\\.(?:m3u8|mp4)(?:\\?[^\\s\"'<>\\\\]*)?", Pattern.CASE_INSENSITIVE).matcher(p);
+          while (unpackedUrls.find()) {
+            unpackedCandidates.add(unpackedUrls.group());
+          }
+
+          List<String> found = clean(unpackedCandidates, base);
+          if (!found.isEmpty()) return main(title, found);
+        }
+      }
+    } catch (Exception ignored) {
+    }
+
+    // 4. HTML video / source 標籤
     List<String> candidates = new ArrayList<>();
     for (Element n : doc.select("video[src], video source[src]")) candidates.add(n.attr("src"));
+
+    // 5. Open Graph 資訊
     Element typeNode = doc.selectFirst("meta[property=og:video:type]");
     String declared = typeNode == null ? "" : typeNode.attr("content").toLowerCase(Locale.ROOT);
     for (Element n : doc.select("meta[property=og:video],meta[property=og:video:url]"))
@@ -164,12 +219,15 @@ public class ParserService implements VideoParser {
         if (!same && !declared.equals("text/html") && media) candidates.add(candidate);
       } catch (RuntimeException ignored) {
       }
+
+    // 6. 全文備用搜尋
     if (candidates.isEmpty()) {
       Matcher fallback =
           Pattern.compile("https?://[^\\s\"'<>\\\\]+\\.(?:m3u8|mp4)(?:\\?[^\\s\"'<>\\\\]*)?")
               .matcher(html.replace("\\/", "/"));
       while (fallback.find()) candidates.add(fallback.group());
     }
+
     List<String> found = clean(candidates, base);
     if (found.isEmpty()) throw new VideoException("未找到影片來源；這個網站需要新增播放器解析器，或需要登入／執行 JavaScript。");
     List<Episode> episodes = new ArrayList<>();
@@ -179,7 +237,6 @@ public class ParserService implements VideoParser {
   }
 
   private List<String> decodeCandidate(String input, String base) {
-    // decodeURIComponent retains '+' and rejects malformed percent UTF-8.
     StringBuilder out = new StringBuilder();
     for (int i = 0; i < input.length(); ) {
       if (input.charAt(i) != '%') {
