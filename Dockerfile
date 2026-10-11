@@ -6,9 +6,9 @@ RUN mvn -B clean package
 RUN mvn -B dependency:copy-dependencies -DincludeScope=runtime -DoutputDirectory=/app/browser-deps
 FROM eclipse-temurin:21-jre-noble
 ENV PLAYWRIGHT_BROWSERS_PATH=/opt/playwright
-COPY --from=build /app/browser-deps /tmp/browser-deps
-RUN java -cp '/tmp/browser-deps/*' com.microsoft.playwright.CLI install --with-deps chromium \
-    && rm -rf /tmp/browser-deps /var/lib/apt/lists/* \
+RUN --mount=type=bind,from=build,source=/app/browser-deps,target=/tmp/browser-deps,readonly \
+    java -cp '/tmp/browser-deps/*' com.microsoft.playwright.CLI install --with-deps chromium \
+    && rm -rf /var/lib/apt/lists/* \
     && useradd --create-home app
 ENV PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
 WORKDIR /app

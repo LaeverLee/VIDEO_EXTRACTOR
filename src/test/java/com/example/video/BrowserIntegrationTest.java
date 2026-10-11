@@ -26,9 +26,15 @@ class BrowserIntegrationTest {
     server.createContext("/private", exchange -> {
       privateRequests.incrementAndGet(); exchange.sendResponseHeaders(200, -1); exchange.close();
     });
+    server.createContext("/frame", exchange -> {
+      byte[] html = "<title>frame-only-marker</title><body>iframe content</body>".getBytes(StandardCharsets.UTF_8);
+      exchange.getResponseHeaders().set("Content-Type", "text/html; charset=utf-8");
+      exchange.sendResponseHeaders(200, html.length); exchange.getResponseBody().write(html); exchange.close();
+    });
     server.createContext("/page", exchange -> {
-      byte[] html = ("<title>dynamic</title><script>setTimeout(()=>{"
-          + "document.body.innerHTML='<video src=\"/movie.mp4\" preload=\"auto\"></video>';"
+      byte[] html = ("<title>dynamic</title><body><iframe src='/frame'></iframe><script>"
+          + "document.addEventListener('click',()=>document.body.dataset.clicked='yes');setTimeout(()=>{"
+          + "document.body.insertAdjacentHTML('beforeend','<video src=\"/movie.mp4\" preload=\"auto\"></video>');"
           + "fetch('/movie.mp4').catch(()=>{});fetch('/private').catch(()=>{});},100);</script>")
           .getBytes(StandardCharsets.UTF_8);
       exchange.getResponseHeaders().set("Content-Type", "text/html; charset=utf-8");
@@ -49,6 +55,9 @@ class BrowserIntegrationTest {
       BrowserService.RenderedPage rendered = browser.fetchRenderedHtml(base + "/page");
       assertTrue(rendered.html().contains("src=\"/movie.mp4\""));
       assertTrue(rendered.mediaUrls().contains(base + "/movie.mp4"));
+      assertTrue(rendered.html().contains("frame-only-marker"));
+      assertTrue(rendered.html().contains("<!-- IFrame:"));
+      assertTrue(rendered.html().contains("data-clicked=\"yes\""));
       assertEquals(0, mediaDownloads.get());
       assertEquals(0, privateRequests.get());
     } finally { server.stop(0); }
