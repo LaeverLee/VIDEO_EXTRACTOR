@@ -18,15 +18,22 @@ public class ParserService implements VideoParser {
   private final UrlPolicy urls;
   private final RemoteRepository remote;
   private final ObjectMapper json;
+  private final BrowserService browser;
 
   private static Pattern pattern(String s) {
     return Pattern.compile(s, Pattern.DOTALL);
   }
 
   public ParserService(UrlPolicy urls, RemoteRepository remote, ObjectMapper json) {
+    this(urls, remote, json, null);
+  }
+
+  @org.springframework.beans.factory.annotation.Autowired
+  public ParserService(UrlPolicy urls, RemoteRepository remote, ObjectMapper json, BrowserService browser) {
     this.urls = urls;
     this.remote = remote;
     this.json = json;
+    this.browser = browser;
   }
 
   public ParseResult inspect(String value) throws IOException {
@@ -34,10 +41,31 @@ public class ParserService implements VideoParser {
     remote.checkPublic(url);
     if (urls.path(url).matches("(?i).*\\.(mp4|m3u8)$"))
       return new ParseResult("影片", List.of(new Episode("主影片", List.of(url))), url);
-    RemoteResource resource = remote.fetch(url, "", "");
-    String actual = resource.url();
-    String html = remote.readText(resource, 8 * 1024 * 1024);
-    ParseResult result = extract(html, actual);
+    String actual;
+    ParseResult result;
+    try {
+      RemoteResource resource = remote.fetch(url, "", "");
+      actual = resource.url();
+      String html = remote.readText(resource, 8 * 1024 * 1024);
+      result = extract(html, actual);
+    } catch (VideoException error) {
+      // Do not retry policy failures, oversized pages, 404s or other permanent errors.
+      String message = error.getMessage();
+      if (browser == null || !browser.enabled()
+          || !(message.startsWith("未找到影片來源")
+              || message.startsWith("來源回應 403")
+              || message.startsWith("來源回應 429"))) throw error;
+      BrowserService.RenderedPage rendered = browser.fetchRenderedHtml(url);
+      actual = rendered.url();
+      try {
+        result = extract(rendered.html(), actual);
+      } catch (VideoException noSource) {
+        if (!noSource.getMessage().startsWith("未找到影片來源") || rendered.mediaUrls().isEmpty())
+          throw noSource;
+        String title = Jsoup.parse(rendered.html()).title().split(" - ", -1)[0].strip();
+        result = main(title.isEmpty() ? "影片" : title, rendered.mediaUrls());
+      }
+    }
     Episode first = result.episodes().getFirst();
     return new ParseResult(
         result.title(),

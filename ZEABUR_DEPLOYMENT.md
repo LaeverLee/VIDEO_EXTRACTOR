@@ -22,3 +22,4 @@
 - 2026-10-11：HLS segments.size() > 10000，錯誤訊息同步改為 10000。HlsTest 通過，Deployment ID 6aca808dc0a5252069b832fb 運作中。首頁、MP4 解析與 OAuth 設定檢查通過；未驗證實際大型 HLS 下載。
 - 2026-10-11：HttpRemoteRepository 有 Referer 時送出推導 Origin；Deployment ID 6aca83d5da7cf920c26376cf 運作中。首頁、解析 API 與 OAuth 設定正常；尚未驗證原失敗來源 403 是否解決。
 - 2026-10-11：HttpRemoteRepository.java 完整替換為使用者提供版本（Chrome 122 / macOS、Accept、Accept-Language、Sec-Ch-Ua、Sec-Fetch 等標頭）。Maven test 通過；Deployment ID 6acb3d5c48c5c4b07806e7eb 運作中。HTTPS 首頁 200、MP4 inspect 正常、OAuth configured=true。尚未驗證原來源 403；尚未 commit/push。
+- 2026-10-11：Playwright 1.48.0 Chromium 備援解析已部署；Deployment ID 6acb475b48c5c4b07806e8ee 運作中。修正 Zeabur root 啟動：ENTRYPOINT 以 runuser 切換 app，保留 Chromium sandbox。平台環境變數 PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1 已儲存並重啟，Dockerfile 同步設定供後續部署。Linux Docker 建置成功；動態 JS 測試頁經 Chromium 渲染後 /api/inspect 回傳 200 及單一來源；首頁 200、直接 MP4 inspect 與 OAuth configured=true。尚未驗證原網站 403、Drive 實際下載／上傳；尚未 commit/push。

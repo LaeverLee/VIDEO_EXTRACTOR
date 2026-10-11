@@ -4,6 +4,9 @@ services:
     ports:
       - "8080:8080"
     restart: unless-stopped
+    mem_limit: 2g
+    shm_size: 256m
+    pids_limit: 256
     environment:
       PORT: 8080
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
