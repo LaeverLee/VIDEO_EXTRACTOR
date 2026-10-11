@@ -25,9 +25,11 @@ public class HttpRemoteRepository implements RemoteRepository {
           .build();
   private final OkHttpClient dnsClient =
       client.newBuilder().callTimeout(10, TimeUnit.SECONDS).build();
+  
+  // 現代化且符合常見桌面瀏覽器的 User-Agent
   private static final String UA =
-      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko)"
-          + " Chrome/120.0.0.0 Safari/537.36";
+      "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) "
+          + "Chrome/122.0.0.0 Safari/537.36";
 
   public HttpRemoteRepository(UrlPolicy policy, ObjectMapper json) {
     this.policy = policy;
@@ -66,7 +68,21 @@ public class HttpRemoteRepository implements RemoteRepository {
     String url = policy.validate(value);
     checkPublic(url);
     for (int i = 0; i < 6; i++) {
-      Request.Builder request = new Request.Builder().url(url).header("User-Agent", UA);
+      // 建立請求並補齊完整的現代瀏覽器標頭（排除 br 避免 OkHttp 無法解壓縮）
+      Request.Builder request = new Request.Builder()
+          .url(url)
+          .header("User-Agent", UA)
+          .header("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8")
+          .header("Accept-Language", "zh-TW,zh;q=0.9,en-US;q=0.8,en;q=0.7")
+          .header("Sec-Ch-Ua", "\"Chromium\";v=\"122\", \"Not(A:Brand\";v=\"8\", \"Google Chrome\";v=\"122\"")
+          .header("Sec-Ch-Ua-Mobile", "?0")
+          .header("Sec-Ch-Ua-Platform", "\"macOS\"")
+          .header("Sec-Fetch-Dest", "document")
+          .header("Sec-Fetch-Mode", "navigate")
+          .header("Sec-Fetch-Site", "same-origin")
+          .header("Sec-Fetch-User", "?1")
+          .header("Upgrade-Insecure-Requests", "1");
+
       if (referer != null && !referer.isEmpty()) {
         String validReferer = policy.validate(referer);
         request.header("Referer", validReferer);
@@ -79,6 +95,7 @@ public class HttpRemoteRepository implements RemoteRepository {
         request.header("Origin", origin);
       }
       if (range != null && !range.isEmpty()) request.header("Range", range);
+      
       Response response = client.newCall(request.build()).execute();
       int status = response.code();
       if (List.of(301, 302, 303, 307, 308).contains(status)) {
